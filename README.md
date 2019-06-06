@@ -8,6 +8,29 @@ Al respecto, el paper de conferencia para ENICC se tienen detalles.
 
 #### Lista de códigos relevantes
 
+**searching_v1.R**: Lo que hacemos aqui es ir buscando las energias de acople Ec y las barreras de energia Emst, de tal forma de minimizar alphaX*Ec + (1-alpha)*Emst.
+
+Algoritmo:
+
+\1. Se selecciona un vertice o nodo (o producto) de partida S = {nodo inicial} 
+nota: el nodo inicial puede ser aquel con el mayor strength en el MST.
+
+\2. subrutina energy_coupling_search:
+
+​	 2.1 Para cada uno de los N-1 nodos restantes not in S, calcular la energia de acople y tener el vector de  	energias de acoples para cada agregacion de producto. (temp_Ec)
+
+\3. subrutina de energy_mst_search:
+
+​         3.1 Para cada uno de los N-1 nodos restantos not in S, calcular la energia de barreras o distancia a lo largo del MST que una S con el nodo not in S. Obtener el vector de energias mst para cada uno de los nodos. (temp_Emst)
+
+ \4. sumar alpha*temp_Ec + (1-alpha)*temp_Ec para cada nodo y seleccionar nodo x que corresponda al minimo de alphaX*Ec + (1-alpha)*Emst.
+
+\5. S = S Union {nodo x}
+
+\6. repeat to 2 until S = {esten todos los nodos o hasta un numero determinado de nodos}
+
+
+
 **mstdistances_and_energies_v2.R**: Con este archivo trabajamos actualmente. Aqui esta el código principal de agregacion de productos. Detalles:
 Hacemos lo mismo que esta en mstdistances_and_energies.R, utilizando sus mismos codigos pero con datos de acoples inferidos con 25 productos: (ver new_inferring_parameters.R). Las inferencias se encuentran en: new_inferring_parameters_environment270219.RData. Dado que son 25 productos, el numero de estados es de app 33.5 millones, lo cual hace que generar la matriz de active_vertex sea impractico. Hay que hacer otro enfoque:
 
