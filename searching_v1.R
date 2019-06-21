@@ -16,7 +16,9 @@
 # 09 jun: he creado la funcion energy_coupling_and_mst_search que hace de una vez la 
 #       subrutina energy_coupling_search y energy_mst_search y el resultado es una matriz
 #       con todas las energias de acoples y de mst para la agregacion de cada uno de los 
-#       nodos disponibles al vector de cluster v. 
+#       nodos disponibles al vector de cluster v.
+# 10 jun: repetimos el algoritmo para un punto de partida, y luego para cada uno de los
+#       restantes nodos.
 
 # Procedure before the algorithm
 # load de wb = matriz de canastas 179,610 X 25
@@ -54,8 +56,11 @@ library(scales)  # makes pretty labels on the x-axis
 library(colorspace)
 library(purrr)
 library(igraph)
+library(svMisc) # progress bar
 source("entropies_functions.R")
 source("network_functions_v1.R")
+source("find_mst_barrier_function.R")
+source("find_starting_vertex_function.R")
 
 load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
 # # # # # # # # # # # # # # # # # # # # CARGA de datos # # # # # # # # # # # # # # # # # # # # 
@@ -63,74 +68,6 @@ load('new_inferring_parameters_environment270219.RData') # load H and J paramete
 
 
 # # # # # # # # # # # # # # # # # # # # FUNCIONES # #  # # # # # # # # # # # # # # # # # # # # 
-#convertir de distancia mst a energia J
-dist_to_j <- function(vect) {
-  value <- 3 - vect^2
-  return(value)
-}
-
-# # FUNCTION
-# # # # # # # # # # # #  # # # # # # FIND strongest vertex # # # # # # # # ## #  # # # # # # #
-# Input: igraph object the mst
-# output: the name of teh starting vertex in numeric format
-find_starting_vertex <- function(mst_g) {
-  # strengh de los nodos en el MST
-  #st <- strength(mst_g, weights = E(mst_g)$coupling)
-  st <- strength(mst_g, weights = E(mst_g)$weight)
-  id <- which(st == max(st))
-  v <- as.numeric(as_ids(V(mst_g)[id]))
-  v <- c(v)
-  return(v)
-}
-# example:
-#v <- find_starting_vertex(mst_g)
-# Result: node 80
-# # # # # # # # # # # #  # # # # # # FIND strongest vertex # # # # # # # # ## #  # # # # # # #
-# # FUNCTION
-# # # # # # # # # # # # # # # # # # # # # FIND Emst # # # # # # # # # # #  # # # # # # # # # #
-# Inspirado en la idea de la L164 en adelante en mstdistances_and_energies.R
-# input: objeto mst igraph 
-# input: vector de nombres de spins activos en el MST
-# output: E_mst : energia o distancia de MST entre los spins activos en el MST
-find_mst_barrier <- function(mst_g, v) {
-  temp <- combn(v,2)
-  calce <- vector(mode="numeric", length=0)
-  for (j in 1:ncol(temp) ) {
-    # Primero vemos si los dos nodos son adyacentes:
-    node1 <- which(as.character(temp[1,j]) == V(mst_g)$name)
-    node2 <- which(as.character(temp[2,j]) == V(mst_g)$name)
-    
-    #are_adjacent(mst_g, as.character(temp[1,j]), as.character(temp[2,j]) )
-    #ed <- get.edge.ids(mst_g, vp=c(as.character(temp[1,j]), as.character(temp[2,j]) ) ) 
-    
-    if ( ( are_adjacent(mst_g, node1, node2 ) ) ) {
-      ed <- get.edge.ids(mst_g, vp=c(node1, node2 ) )
-      calce <- c(calce, ed)
-    } else {
-      # identifica todos los edges para ir de nodo temp[1,j] a nodo temp[2,j]
-      #sp <- shortest_paths(mst_g, from=as.character(temp[1,j]), to=as.character(temp[2,j]), output="epath")
-      sp <- shortest_paths(mst_g, from=node1, to=node2, output="epath")
-      
-      #ed <- sp$epath[[1]]
-      ed <- unlist(sp$epath) #09-dic-18
-      #ed <- all_simple_paths(mst_g, from = as.character(temp[1,j]), to = as.character(temp[2,j]) )
-      #ed <- ed[[1]]
-      
-      # identifica los id de los edges en ed
-      #calce <- c(calce, match(ed, E(mst_g), nomatch = NA_integer_, incomparables = NULL) )
-      calce <- c(calce, ed ) # 09-dic-18
-    }
-    
-    distance <- sum(E(mst_g)$weight[unique(calce)]) # esta es la suma de energias de acoples en el MST.
-    #distance <- sum( dist_to_j(E(mst_g)$weight[unique(calce)]) ) # esta es la suma de energias de acoples en el MST.
-    #E_mst <- sum(E(mst_g)$coupling[unique(calce)]) 
-  }
-  return(distance)
-}
-# Ejemplo
-#E_mst <- find_mst_barrier(mst_g, v)
-# # # # # # # # # # # # # # # # # # # # # FIND Emst # # # # # # # # # # #  # # # # # # # # # #
-
 # # # # # # # # # # # # # # # # # # energy_coupling_search# # # # # # # # ## # # # # # # # # #
 # Esta funcion lo que hace es buscar el producto que incrementa la minima energia al cluster
 # dado o contenido en v.
@@ -149,6 +86,18 @@ find_mst_barrier <- function(mst_g, v) {
 energy_coupling_and_mst_search <- function(v, tes, option="one") {
   node_names <- colnames(J)
   ocupados <- which(v==1)    #ocupados = c(3,4)
+  # tenemos que chequear si el vectro v de cluster ya esta lleno de puros unos
+  # en ese caso hay que parar la funcion.
+  if (length(ocupados) == length(v) ) {
+    stop("The vector of clusters is complete. There are no more nodes to add")
+    #e_acople <- get_energy(v, mode="c")
+    #id_temporal <- which(v==1)
+    #items <- as.factor(colnames(v)[id_temporal])
+    #items <- as.numeric(as.character(items))
+    #r <- d_mst_distances(mst_g, vec = items)
+    #d_mst <- r[[1]]
+    #e_mst <- r[[2]]
+  } 
   a_probar <- tes[! tes %in% ocupados] # dejamos los cols id de v, que estan vacios con ceros.
   a_probar_names <- node_names[!node_names %in% node_names[ocupados]] # nombre de los nodos que vamos a probar
   almacen <- matrix(NA, ncol=5, nrow=length(a_probar)) # aqui vamos dejando las energias de acople y el producto correspondiente
@@ -164,11 +113,11 @@ energy_coupling_and_mst_search <- function(v, tes, option="one") {
     almacen[i,3] <- get_energy(v_temporal, mode="c")
     # subrutina para calcular las distancias mst y energias mst
     id_temporal <- which(v_temporal==1)
-    items <- as.factor(names[id_temporal])
+    items <- as.factor(colnames(v_temporal)[id_temporal])
     items <- as.numeric(as.character(items))
-    r <- d_mst_distances(mst_g, vec = items)  
-    almacen[i,4] <- r[[1]]
-    almacen[i,5] <- r[[2]]
+    r <- d_mst_distances(mst_g, vec = items)  ###########OJO cambiarla por find_mst_barrier en find_mst_barrier_function.R
+    almacen[i,4] <- r[[1]] #distancia
+    almacen[i,5] <- -1*r[[2]] #energia mst (multiplicamos por -1 porque si bien los acoples son positivos, la energia es negativa)
   }
   if (option == "one") {
     mini <- which(almacen[,3] == min(almacen[,3])) # retorna el minimo de energia de acople
@@ -196,7 +145,7 @@ rownames(J) <- colnames(wb)
 #rownames(h) <- c(1:dim(J)[1])
 #http://www.shizukalab.com/toolkits/sna/plotting-networks-pt-2
 net <- graph_from_adjacency_matrix(as.matrix(J), mode="upper", weighted=TRUE, diag=FALSE)
-E(net)$coupling <- E(net)$weight
+#E(net)$coupling <- E(net)$weight
 # Conforming the MST Network
 dis <- sqrt(-J + 3) 
 # Convertir la matriz de distancia en objeto igraph
@@ -236,42 +185,46 @@ v[resultado[2]] <- 1
 
 
 
+# Starting the loop ------------------------10, jun, 2019
+# Debemos cargar los datos, funciones, librerias y encontrar el MST.
+# create the vector-clustering
+v <- matrix(0, ncol=ncol(wb), nrow=1)
+colnames(v) <- colnames(wb)
+
+# Create de initial node to start
+item <- find_starting_vertex(mst_g) # basado en min alpha*Ec + (1-alpha)*Emst  v=80
+i <- which(colnames(v) == item)
+v[i] <- 1
+Ec <- get_energy(v, mode="c") # funcion de entropies_functions.R / Matriz J de acoples debe estar cargada.
+tes <- seq(1:ncol(v)) # un vector con los id de columnas de v que se utiliza despues.
+alpha = 0.5 # minimizar alphaX*Ec + (1-alpha)*Emst
+
+# Comienza el loop recorriendo cada uno de los N-1 nodos
+nodes <- ncol(v) - 1
+final_result <- matrix(NA, ncol=3, nrow=nodes+1)
+colnames(final_result) <- c("node", "Ec", "Emst")
+final_result[1,] <- c(item, 0, 0) # we put here on the first row, the starting vertex.
+for (node in 1:nodes) {
+  # https://medium.com/human-in-a-machine-world/displaying-progress-in-a-loop-or-function-r-664796782c24
+  progress(node, progress.bar = TRUE)
+  Sys.sleep(0.01)
+  if (node == nodes) cat("Done!\n")
+  #print(node)
+  # subrutina energy_coupling_search y subrutina y subrutina de energy_mst_search en la funcion energy_coupling_and_mst_search
+  r_energies <- energy_coupling_and_mst_search(v = v, tes = tes, option = "all")
+  #ponderation <- alpha*r_energies[,3] + (1-alpha)*r_energies[,5] # en col3 energia de acople, en col5 energia MST
+  ponderation <- alpha*r_energies[,3] + (1-alpha)*r_energies[,4] # en col3 energia de acople, en col4 distancia MST
+  r_energies <-  cbind(r_energies, ponderation)
+  min_id <- which(r_energies[,6] == min(r_energies[,6]))
+  resultado <- r_energies[min_id, ]
+  v[resultado[2]] <- 1
+  final_result[node+1,] <- c(resultado[1], resultado[3], resultado[5])
+}
+final_result
 
 
+# como se interpreta final_result?
+# Cada fila representa el nodo que se va agregando al cluster con su 
+# respectiva Ec y Emst
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-number_of_vertexs <- 20
-alpha <- 1 #nivel de importancia a la energia de acople Ec 
-tableau <- matrix(NA, ncol=4, nrow=number_of_vertexs ) # vertex name, Ec, Emst, Etotal
-# generar el vector de estado:
-vertex_positions <- as.numeric(rownames(H))
-state <-  rep(0, length(H))
-id <- which(vertex_positions == v)
-state[id] <- 1
-#energia_total <- get_energy(as.matrix(state), mode="t")
-#energia_field <- get_energy(as.matrix(state), mode="f")
-energia_coupl <- get_energy(t(as.matrix(state)), mode="c")
-Ec <- 0 # la distancia MST de un unico vertex es nula.
-tableau[1, ] <- c(v[length(v)], energia_coupl, 0, alpha*energia_coupl + (1-alpha)*0)
