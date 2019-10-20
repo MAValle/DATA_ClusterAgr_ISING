@@ -17,7 +17,7 @@ library(ggplot2)
 library(latex2exp)
 library(gdata)
 source("ising_functions_v3.R")
-#carga de las 250 muestras de weide_baskets
+#carga de las 250 muestras de wide_baskets
 all_wbaskets <- readRDS("wbaskets250_doing_parallel_for_physicaA_210618.rds")
 # carga de las 250 acoples y magnetizaciones de boltzmann learning
 couplings <- readRDS("fieldsandcouplings250_doing_parallel_for_physicaA_090718.rds")

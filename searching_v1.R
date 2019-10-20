@@ -1,6 +1,7 @@
 # Lo que hacemos aqui es ir buscando las energias de acople Ec y las barreras de
 # energia Emst, de tal forma de minimizar alphaX*Ec + (1-alpha)*Emst.
-# 
+# Este es el algoritmo de agregacion de productos partiendo desde una condicion inicial.
+
 
 # Para detalles ver el paper de conferencia a ICANN, y pag. 225-228 de los apuntes.
 

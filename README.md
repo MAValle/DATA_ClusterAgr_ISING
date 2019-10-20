@@ -8,7 +8,62 @@ Al respecto, el paper de conferencia para ENICC se tienen detalles.
 
 #### Lista de códigos relevantes
 
-**searching_v1.R**: Lo que hacemos aqui es ir buscando las energias de acople Ec y las barreras de energia Emst, de tal forma de minimizar alphaX*Ec + (1-alpha)*Emst.
+**clusteraggr_v1.R**: Lo que hacemos aqui es  utilizar el concepto de clustering aggregation basado en aglomeración. El procedimiento es así:
+
+\1. Generamos matriz E = $\alpha*E_{c} + (1-\alpha)*E_{mst}$ para cada par de nodos.
+
+\2. Search for a pair of nodes $i,j$ que produzca la menor E y lo agrupamos.
+
+\3. Se repite el proceso de agregacion aglomerativo hasta que se terminen todos los nodos.
+
+Si se hace el merge o aglomeracion con single linkage, obtendria el MST tree (con alpha=0).
+
+**NOTA: actualmente aquí hacemos un HAC con solo una variable que es el E, pero podriamos hacerlo tomando Ec y Emst por separado**. **Para efectos de comparar, podemos comparar el HAC propuesto con energia con el de las correlaciones y tambien en terminos de complejidad de computo. **
+
+**NOTA: Para efectos de comprar HAC tambien puedo utilizar sistema de particion, que segun el paper hierarchical clustering algorithms for document dataset, la particion es mejor que la aglomeracion.**
+
+**clusteraggr_v2.R**: Actualmente, este script solo es una prueba artificial del 21.08.19 con n=4 nodos que hace clustering sin las funciones de *functions_hclust.R*. Hay que actualizar esto para comenzar a incorporar la energia de acople (de alguna manera) en el calculo de las distancias. (ver pag. 242 a 244 apuntes).
+
+
+
+**monotonocity_checks.R**: Debido a que no es correcto mezclar distancias con energias en el calculo de $E$, vemos la posibilidad de utilizar distancias.
+
+
+
+**testing_hierarchical_clustering.R**: Version primera de pruebas simples para hacer clustering jerarquico con mi propia programacion. Es la base para ``clusteraggr_v2.R``.
+
+**testing_hierarchical_clusteringV2.R**: Version segunda de pruebas simples para hacer clustering jerarquico con mi propia programacion. Es la base para las funciones en ``functions_hclust.R`` y  ``clusteraggr_v2.R``.
+
+**testing_hierarchical_clusteringV3.R**: En esta version 3, hacemos un test utilizando un ejemplo de matriz de distancias que se encuentra en: http://84.89.132.1/~michael/stanford/maeb7.pdf
+
+**testing_hierarchical_clusteringV4.R**: En esta version 4, hacemos un test utilizando una matriz de distancia mas grande y con las funciones generales en functions_hclust.R desarrolladas en el 27.ago.19 basados en testing_hierarchical_clusteringV3.R
+
+**testing_hierarchical_clusteringV5.R**: En esta version 5, probamos las funciones de *functions_hclust.R* para hacer HAC sobre la matriz de distancias del MST de los acoples para el paper y verificamos que el resultado del dendograma sea equivalente al del MST. Es decir, deseamos verificar lo indicado en pag. 237 (ver tambien pag. 241 de los apuntes.). Vemos que mi programacion de clustering jerarquico con single linkage está correcto y coincide con el MST. Implementado en la funcion hierarchical_clustering_v2.
+
+**testing_hierarchical_clusteringV6.R**: En esta versión de single linkage, la matriz de distancia se va actualizando de acuerdo al factor gamma que declaramos en la pag. 242, en donde las distancias mst en la matriz se modifican de acuerdo a la energia de acople involucrada entre los nodos de los clusters que se fusionan. Los resultados están en pag.247. Se pierde ultrametricidad property. 
+
+ **testing_hierarchical_clusteringV7b.R**: En esta version se implementa la idea de la pag.252, 243, 244, 250 en donde para cada fusion de cluster, se chequea primero la distancia de acople (que es la sumatoria de las energia de acople entre cada par de nodos convertidas a distancia), y se busca aquella fusion que tenga la menor energia de acople, pero bajo la restriccion de que la fusion se haga con algun nodo que esté en el MST. El proceso reconoce tres alternativas de fusion. La primera cuando se fusionan dos clusters en donde l numero de nodos de cada uno es 1. Aqui no e snecesario buscar distancia de acople porque es la misma que la distancoa mst. Segundo, cuando ambos cluster tienen más de un nodo. En este caso no se busca mejor distancia de acople y los dos clusters se unen. Tercero, cuando un cluster solo tiene 1 nodo, el el otro tiene mas de 1. En este caso se busca el mejor nodo de fusion al cluster grande que tenga la menor distancia de acople. Este algoritmo esta implementado en hierarchical_clustering_v3. Los resultados indican que no hay diferencias entre este forma de fusion y la de single linkage tradicional (implementado en hierarchical_clustering_v2).
+Nota: la version testing_hierarchical_clusteringV7.R es una verison antigua de backup no vigente.
+
+ **testing_hierarchical_clusteringV8.R**: Esta version es la misma que la V7b, pero en este caso, cuando hay dos cluster que se van a fusionar en donde los dos tienen más de 1 nodo, se buscar para cad acluster, otro nodo u otro cluster que logre la menor distancia de acople. En la version V7b, cuando teníamos este caso, los dos cluster se unían sin buscar minima distancia de acople.
+
+
+
+**functions_hclust.R**: Conjunto de functiones para hacer clustering jerarquico HAC con single linkage a partir de una matriz de distancia $D$. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+**searching_v1.R**: Lo que hacemos aqui es ir buscando las energias de acople Ec y las barreras de energia Emst, de tal forma de minimizar $\alpha *E_c + (1-\alpha)*E_{mst}$. Este es para ir haciendo la agregación de productos desde un punto de partida.
 
 Algoritmo:
 
@@ -50,7 +105,19 @@ Nota: La version 1 de  mst_distances_and_energies.R  viene de vienen originalmen
 
 
 
-Funciones:
+####Figure replicas for paper
+
+**density_couplings_forpaper.R**: Este script calcula el histigrama y densidad y sus respectiva grafica de la pdf de los acoples para efectos de publicacion en el paper.
+
+**consistency_check_plot_forpaper.R**: Replica de la figura de recovered <si> , <sisj> y Cij para el paper. Seguimos el mismo procedimiento establecido en one_and_two_body_abalysisV2.R y exactamente el mismo para el paper de congreso en paper_congreso_figure_replica2-R
+
+**networks_plot_forpaper.R**: Replica de las figuras de redes de acoples con distintos umbrales a la distirbución de los acoples. Esto se basa en paper_congreso_figure_replica3.R.
+
+**mst_plot_forpaper.R**: Replcia de figuras de MST para paper.
+
+
+
+####Funciones:
 
 **entropies_functions.R**: vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
 
@@ -58,17 +125,31 @@ Funciones:
 
 **ising_functions_v3.R**: vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
 
+**find_starting_vertex_function.R**: FIND strongest vertex
+
+**find_mst_barrier_function.R**: Inspirado en la idea de la L164 en adelante en mstdistances_and_energies.R
+
+**is_integer0_function.R**: función para testear si un vector esta vacio.
+
+**functions_hclust.R**: varias funciones necesarias para llevar a cabo hierarchical cluster que estan en la serie de scripts de testing_hierarchical_clusteringVxxx.R
+
+**acople_distance_sum_function.R**: esta funcion calcula la sumatoria de las acoples convertidas en distancia previamente.
 
 
-Ambiente de datos generados:
 
-**new_inferring_parameters_environment270219**: resultado de new_inerring_parameters.R
+####Ambiente de datos generados:
+
+**new_inferring_parameters_environment270219.RData**: resultado de new_inerring_parameters.R
+
+**plots_from_network_plot_forpaper310719.rds**: 
+
+**fieldsandcouplings250_doing_parallel_for_physicaA_090718.rds**
 
 
 
 
 
-Para el congreso ENICC:
+####Figure replicas for conference ENICC:
 
 **paper_congreso_figure_replicav2.R**: replica de figura para el congreso ENICC.
 
