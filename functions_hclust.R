@@ -3,6 +3,7 @@
 
 # actual name: functions_hclust.R
 
+#---->cluster_find_name
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # 22.ago.19
 # pequena funcion que, dado la matriz D, nos encuentre la minima distancia entre dos cluster
@@ -172,13 +173,14 @@ hierarchical_clustering <- function(D) {
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # 23 sep 19
-# Hacemos lo mismo que la funcion hierarchical_clustering_V2, pero a la matriz merge (que es el 
+# Hacemos lo mismo que la funcion hierarchical_clustering, pero a la matriz merge (que es el 
 # output), le agregamos dos columnas mas, que son la distancia MST del cluster formado, y la 
 # distancia de acople del cluster. 
 # cabe aclarar que la distancia mst es un proxy energia de mst, mientras que la distancia de 
 # acoples es un proxy de la energia de acoples. La gracia de usar distancias en vez de directamente
 # los acoples, es que evitamos tener que sumar numeros negativos y positivos.
-hierarchical_clustering_v2 <- function(D) {
+# nota: 131019: se incorpora como input el mst_g y matriz de acople J
+hierarchical_clustering_v2 <- function(D, J, mst_g) {
   N <- ncol(D)
   merge <- matrix(NA, ncol=6, nrow=N-1) # col1 y col2 spins merged, col3 numero de cluster, col4 = merge distance
   merge <- as.data.frame(merge)
@@ -291,7 +293,8 @@ hierarchical_clustering_v2 <- function(D) {
 # Cabe aclarar que la distancia mst es un proxy energia de mst, mientras que la distancia de 
 # acoples es un proxy de la energia de acoples. La gracia de usar distancias en vez de directamente
 # los acoples, es que evitamos tener que sumar numeros negativos y positivos.
-hierarchical_clustering_v3 <- function(D) {
+# nota: 131019: se incorpora como input el mst_g y matriz de acople J
+hierarchical_clustering_v3 <- function(D, J, mst_g) {
   # # # Inicializacion de la matriz merge que es el output
   N <- ncol(D)
   merge <- matrix(NA, ncol=6, nrow=N-1) # col1 y col2 spins merged, col3 numero de cluster, col4 = merge distance
@@ -346,7 +349,7 @@ hierarchical_clustering_v3 <- function(D) {
         for (n in 1:num_cluster_anteriores) { # ahora buscamos para cada cluster con mas de dos nodos, 
           # sus nodos adyacentes en el MST que tienen la mayor distancia de acople
           #registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=te[n])
-          registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=el_cluster)
+          registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=el_cluster, mst_g = mst_g, J = J)
           registro <- rbind(registro, registro_interno)
         }
         # veamos cual seria la proxima fusion de acuerdo a la minima distancia de acople
@@ -469,7 +472,8 @@ hierarchical_clustering_v3 <- function(D) {
 # se buscar para cada cluster, otro nodo u otro cluster que logre la menor 
 # distancia de acople. En la version hierarchical_clustering_v3, cuando teníamos este caso, los dos 
 # cluster se unían sin buscar minima distancia de acople.
-hierarchical_clustering_v4 <- function(D) {
+# nota: 131019: se incorpora como input el mst_g y matriz de acople J
+hierarchical_clustering_v4 <- function(D, J, mst_g) {
   # # # Inicializacion de la matriz merge que es el output
   N <- ncol(D)
   merge <- matrix(NA, ncol=6, nrow=N-1) # col1 y col2 spins merged, col3 numero de cluster, col4 = merge distance
@@ -506,8 +510,8 @@ hierarchical_clustering_v4 <- function(D) {
         nodos_cluster2 <- mn[[te[2]]]
         
         # step 2: determinar nodos adyacentes de cada cluster
-        nodos_ady_cluster1 <- find_ady_dc(v=nodos_cluster1, n=te[1])
-        nodos_ady_cluster2 <- find_ady_dc(v=nodos_cluster2, n=te[2])
+        nodos_ady_cluster1 <- find_ady_dc(v=nodos_cluster1, n=te[1], mst_g = mst_g, J = J)
+        nodos_ady_cluster2 <- find_ady_dc(v=nodos_cluster2, n=te[2], mst_g = mst_g, J = J)
         
         # Step 3: extraer nodos adyacentes de cluster 1 y 2, son considerar los nodos
         # del propio cluster 1 y 2.
@@ -567,7 +571,7 @@ hierarchical_clustering_v4 <- function(D) {
         for (n in 1:num_cluster_anteriores) { # ahora buscamos para cada cluster con mas de dos nodos, 
           # sus nodos adyacentes en el MST que tienen la mayor distancia de acople
           #registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=te[n])
-          registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=el_cluster)
+          registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=el_cluster, mst_g = mst_g, J = J)
           registro <- rbind(registro, registro_interno)
         }
         # veamos cual seria la proxima fusion de acuerdo a la minima distancia de acople
@@ -662,7 +666,7 @@ hierarchical_clustering_v4 <- function(D) {
   return(merge)
 }
 # ejemplo:
-#merge <- hierarchical_clustering_v4(D)
+#merge <- hierarchical_clustering_v4(D, J=J, mst_g)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
@@ -690,24 +694,24 @@ final_fusion <- function(nombre_columnas_D, proxima_fusion, elregistro, id) {
 # # funcion que para un cluster en analisis, nos dice sus nodos adyacentes en el MST y la 
 # # distancia de acople dc = f(sumatoria de las energias de acoples entre pares de nodos)
 # output: matriz con tres columnas: el cluster bajo analisis, el nodo adyacente y su distancia de acople dc
-find_ady_dc <- function(v, n) {
-  registro_interno <- matrix(NA, ncol=3, nrow=0)
-  colnames(registro_interno) <- c("cluster_n", "elnodo", "dist_acople") #tengo que ir registrando el cluster (n), el elnodo y distancia_acople entre cluster y elnodo
-  # sus nodos adyacentes en el MST que tienen la menor distancia de acople
-  ady <- adjacent_vertices(mst_g, as.character(v))
-  nodoss <- length(ady) # numero de nodos adyacentes al cluster 
-  for (m in 1:nodoss) {
-    elnodo <- setdiff(as.character(-1*as.numeric(ady[[m]]) ) , as.character(v)) # encontramos el nodo que esta en ady[[.]] pero no en v
-    if (vector.is.empty(elnodo) ) { next } # en caso que elnodo sea vacio
-    #elnodo <- -1*as.numeric(elnodo)
-    for (x in 1:length(elnodo) ) {
-      nodo <- as.numeric(elnodo[x])
-      distancia_acople <- acople_distance_sum2(J, c(v, nodo))  ### > OJo que esta funcion esta en acople_distance_sum_function.R
-      registro_interno <- rbind(registro_interno, c(n, nodo, distancia_acople))
-    }
-  }
-  return(registro_interno)
-}
+# find_ady_dc <- function(v, n) {
+#   registro_interno <- matrix(NA, ncol=3, nrow=0)
+#   colnames(registro_interno) <- c("cluster_n", "elnodo", "dist_acople") #tengo que ir registrando el cluster (n), el elnodo y distancia_acople entre cluster y elnodo
+#   # sus nodos adyacentes en el MST que tienen la menor distancia de acople
+#   ady <- adjacent_vertices(mst_g, as.character(v))
+#   nodoss <- length(ady) # numero de nodos adyacentes al cluster 
+#   for (m in 1:nodoss) {
+#     elnodo <- setdiff(as.character(-1*as.numeric(ady[[m]]) ) , as.character(v)) # encontramos el nodo que esta en ady[[.]] pero no en v
+#     if (vector.is.empty(elnodo) ) { next } # en caso que elnodo sea vacio
+#     #elnodo <- -1*as.numeric(elnodo)
+#     for (x in 1:length(elnodo) ) {
+#       nodo <- as.numeric(elnodo[x])
+#       distancia_acople <- acople_distance_sum2(J, c(v, nodo))  ### > OJo que esta funcion esta en acople_distance_sum_function.R
+#       registro_interno <- rbind(registro_interno, c(n, nodo, distancia_acople))
+#     }
+#   }
+#   return(registro_interno)
+# }
 # ejemplo
 # registro_interno <- find_ady_dc(v=lista_nodos_de_clusters[n], n=n)
 
@@ -720,18 +724,18 @@ find_ady_dc <- function(v, n) {
 # input: J = matriz de acoples J
 # input: y = vector con todos los nombres de los spins 
 # output: suma de f(a) + f(b) + f(c) + .... Si son N spins la suma sobre n(n-1)/2 acoples.
-acople_distance_sum <- function(J, y) {
-  sumdist <- 0
-  combinaciones <- combn(y,2)
-  lk <- ncol(combinaciones)
-  for (i in 1:lk) {
-    idx <- combinaciones[, i]
-    cupl <- J[idx[1], idx[2]]
-    dcupl <- sqrt(3 - cupl)
-    sumdist <- sumdist + dcupl
-  }
-  return(sumdist)
-}
+# acople_distance_sum <- function(J, y) {
+#   sumdist <- 0
+#   combinaciones <- combn(y,2)
+#   lk <- ncol(combinaciones)
+#   for (i in 1:lk) {
+#     idx <- combinaciones[, i]
+#     cupl <- J[idx[1], idx[2]]
+#     dcupl <- sqrt(3 - cupl)
+#     sumdist <- sumdist + dcupl
+#   }
+#   return(sumdist)
+# }
 # ejemplo
 # si y = c("-4" "-2" "-1")
 # sumdist <- acople_distance_sum(J, y)
@@ -814,3 +818,51 @@ to_dendo <- function(D, merge, enames) {
 # plot(hc)
 # # si fuese necesario para dexdend package:
 # hc <- as.dendogram(hc)
+
+
+# 05-nov-19
+# funcion creada para hacer el dendograma, version mejorada y que sirve 
+# tambien para hacer el dendograma sobre la base de cualquier distancia
+# es importante que en merge, la distancia que se utilziara para el dendograma
+# por lo general la ultrametrica, venga en la ultima columna de merge
+to_dendo2 <- function(merge, enames) {
+  col = ncol(merge)
+  # 1
+  # para genera rl hc$order, necesitamos identificar de merge[,c(1,2)] todos los
+  # nodos negativos y ordenarlos en un vector en su orden de aparicion.
+  temp <- (merge[,c(1,2)])
+  temp <- as.numeric(rbind(temp$node1, temp$node2))
+  temp <- temp[temp < 0]
+  temp <- -1*temp
+  # # # # # # # # # # 
+  
+  hc <- list()  # initialize empty object
+  # define merging pattern: 
+  #    negative numbers are leaves, 
+  #    positive are merged clusters (defined by row number in $merge)
+  hc$merge <- as.matrix(merge[,c(1,2)])
+  hc$height <- as.vector(merge[, col])    # define merge heights
+  hc$order <- temp   
+  #hc$labels <- LETTERS[1:7]    # labels of leaves -----#poner nombres originales
+  hc$labels <- enames
+  class(hc) <- "hclust"        # make it an hclust object
+  dd <- as.dendrogram(hc)
+  
+  temp2 <- order.dendrogram(dd)  # esto es iportante porque nos permite
+  # colocar en orden los merges para poder plotear.
+  
+  # Luego repetimos el proceso nuevamente con temp2.
+  a <- list()  # initialize empty object
+  # define merging pattern: 
+  #    negative numbers are leaves, 
+  #    positive are merged clusters (defined by row number in $merge)
+  a$merge <- as.matrix(merge[,c(1,2)])
+  a$height <- as.vector(merge[, col])   # define merge heights
+  a$order <- temp2   
+  #hc$labels <- LETTERS[1:7]    # labels of leaves -----#poner nombres originales
+  #a$labels <- c(1:ncol(D))
+  a$labels <- enames
+  class(a) <- "hclust"        # 
+  
+  return(a)
+}

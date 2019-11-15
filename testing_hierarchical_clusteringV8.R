@@ -1,13 +1,21 @@
 # Esta version es la misma que la V7b, pero en este caso, cuando hay dos 
 # cluster que se van a fusionar en donde los dos tienen más de 1 nodo, 
-# se buscar para cad acluster, otro nodo u otro cluster que logre la menor 
+# se buscar para cada cluster, otro nodo u otro cluster que logre la menor 
 # distancia de acople. En la version V7b, cuando teníamos este caso, los dos 
 # cluster se unían sin buscar minima distancia de acople.
 
 
 
 # actual name: testing_hierarchical_clusteringV8.R
-# 16.oct.19
+# 16.oct.19 : creation
+# 24-oct-19: cargamos una matriz de distancia que produce problemas con la funcion hierarchical_clustering_v4
+#            tratamos de ver que sucede.
+# 25-oct-19: desarrollamos una hierarchical_clustering_v4b que intenta solucionar varios casos que hacen que
+#           que la funcion hierarchical_clustering_v4 falle. me he dado cuenta de esto en simulation_hc_v2.R
+#           en donde creamos matrices D y J aleatorias. 
+# 27-oct-19: la funcion hierarchical_clustering_v4 ya esta obsoleta al igual que la hierarchical_clustering_v3.
+#             En consecuencia, desarrollamos hierarchical_clustering_v5 (ver pag.XXX apuntes). Tomamos como
+#             base hierarchical_clustering_v4b que se sobreescribe.
 
 
 # Carga de datos, 
@@ -365,6 +373,277 @@ plot(hc)
 
 
 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# 24-10-19
+# Tratamos de ver que problema sucede con funcion hierarchical_clustering_v4
+# con la siguiente matriz de distancia:
+# cargar funciones 
+# Carga de datos, 
+# igual que en clusteragrr_v1.R
+rm(list = ls())
+#load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
+source("functions_hclust.R")
+#source("network_functions_v1.R") # aqui nos interesa la funcion find_mst_barrier
+source("find_mst_barrier_function.R")
+source("is_integer0_function.R")
+source("entropies_functions.R") # nos interesa aqui get_energy function
+
+source("create_coupling_function.R") # crea matriz J de acoples y D de distancias para simular
+source("create_mst_function.R") # crea MST a partir de una matriz de acople.
+source("acople_distance_sum_function.R") # suma las distantcias de acople dc
+source("find_ady_dc_function.R") # encuentra los nodos adyacentes en un mst dado un nodo
+library(igraph)
+library(Matrix)
+load("test_borrar.RData")
+mst_g <- create_mst(J=J, D=D)
+
+hierarchical_clustering_v4b <- function(D, J, mst_g) {
+  # # # Inicializacion de la matriz merge que es el output
+  N <- ncol(D)
+  merge <- matrix(NA, ncol=6, nrow=N-1) # col1 y col2 spins merged, col3 numero de cluster, col4 = merge distance
+  merge <- as.data.frame(merge)
+  colnames(merge) <- c("node1", "node2", "cluster", "dultr", "dmst", "dc")
+  iteraciones <- N - 2
+  mn <- list() # aqui iremos agregando los nombres de los spins que componen cada clusters 
+  
+  for (it in 1:iteraciones) {
+    #comenzamos a iterar
+    rl <- cluster_find_name(D)
+    id <- rl$id # 
+    nombres <- rl$nombres  # 
+    m <- rl$m  #
+    # leaves (original spins) will be negative, merged clusters will be positive starting from 1, 2, ...
+    nombres_num <- as.numeric(nombres) # nuevo
+    
+    # segundo, ahora chequeamos si el par de cluster identificados, son 2 nodos, o 
+    # hay mas de 2 nodos.
+    # # # # este es el cerebro de la funcion
+    te <- nombres_num
+    hay_cluster_anterior <- which(te > 0)
+    if (is.integer0(hay_cluster_anterior)) { # los dos cluster son solo de 1 nodo cada uno
+      mn <- c(mn, list( as.character(te )) )
+      v <- te
+    } else {  # los dos cluster involucran mas de 2 nodos
+      # aqui comienza la busqueda de alternativas de fusion que MINIMIZAN dc (distancia de acople)
+      num_cluster_anteriores <- length(hay_cluster_anterior) #numero de cluster que tienen mas de 2 nodos
+      if (num_cluster_anteriores > 1) { # en caso que se proponga la fusion de dos clusters cada uno con mas de 1 nodos
+        # haremos que se fusionen incondicionalmente.
+        # 25-oct-19: primero calculemos dc para la union de los dos cluster en te segun fusion original con dmst:
+        v_potencial <- c( mn[[ te[1] ]], mn[[ te[2] ]])    
+        d_cpl_potencial <- acople_distance_sum2(J, v_potencial) 
+        
+        # # # # # # # Aqui viene lo nuevo 16-oct-19  # # # # # # #  # # # # # # #  # # # # # # #  # # # # # # # 
+        # Step 1: identificar nodos de cada cluster
+        nodos_cluster1 <- mn[[te[1]]]
+        nodos_cluster2 <- mn[[te[2]]]
+        
+        # step 2: determinar nodos adyacentes de cada cluster
+        nodos_ady_cluster1 <- find_ady_dc(v=nodos_cluster1, n=te[1], mst_g = mst_g, J = J)
+        nodos_ady_cluster2 <- find_ady_dc(v=nodos_cluster2, n=te[2], mst_g = mst_g, J = J)
+        
+        # Step 3: extraer nodos adyacentes de cluster 1 y 2, sin considerar los nodos
+        # del propio cluster 1 y 2.
+        id_drop <- which(nodos_ady_cluster1[,2] %in% as.numeric(nodos_cluster2))
+        nodos_ady_cluster1 <- nodos_ady_cluster1[-id_drop,]
+        id_drop <- which(nodos_ady_cluster2[,2] %in% as.numeric(nodos_cluster1))
+        nodos_ady_cluster2 <- nodos_ady_cluster2[-id_drop,]
+        nodos_ady <- rbind(nodos_ady_cluster1, nodos_ady_cluster2)
+        
+        # Step 4: deterinar el proximo nodo a fusionar eligiendo aquel que tenga menor distancia de acople
+        id_sel <- which.min(nodos_ady[,3])
+        proxima_fusion_tentativa <- as.numeric(nodos_ady[id_sel, c(1,2)])
+        
+        # Step 5: verificar si nodo seleccionado para fusion pertenece a otro cluster
+        nodo_a_fusionar <- as.character(proxima_fusion_tentativa[2])
+        for (n in 1:length(mn) ) {
+          if ( nodo_a_fusionar %in% mn[[n]] ) {
+            proxima_fusion <- c(proxima_fusion_tentativa[1], n)
+            break
+          } else { proxima_fusion  <- proxima_fusion_tentativa }
+        }
+        
+        # Step 6: determinar todos los nodos de los clusters fusionados
+        hay_nodos <- which(proxima_fusion < 0)
+        if ( length(hay_nodos) > 0) {
+          v_casi <-  c(mn[[proxima_fusion[proxima_fusion > 0]]]   , as.character( proxima_fusion[proxima_fusion<0] ) ) 
+        } else {
+          v_casi <- c( mn[[ proxima_fusion[1] ]], mn[[ proxima_fusion[2] ]])     #<<<<<<<corregido el 241019
+        }
+        
+        d_cpl <- acople_distance_sum2(J, v_casi) 
+    
+        # step 6.5: comparamos si la distancia de acople dc de "proxima_fusion" es menor que la distancia
+        # de acople del cluster original d_cpl_potencial.
+        if (d_cpl < d_cpl_potencial) {
+          # step 7: 
+          mn <- c(mn, list( as.character(v_casi )) )
+          nombres_num <- as.numeric(proxima_fusion)
+          
+          # actualizacion del id, necesario para borrar las filas y columnas en D
+          id <- c( which(colnames(D) == nombres_num[1]) ,   which(colnames(D) == nombres_num[2])   )
+          
+          # nodos de los clusters fusionados.
+          v <- v_casi
+          
+          # actualizacion de la distancia ultrametrica m
+          m <- D[which(colnames(D)==nombres_num[1]), which(colnames(D)==nombres_num[2])]
+        } else { # todo sigue igual
+          nombres_num <- te
+          # actualizacion del id, necesario para borrar las filas y columnas en D
+          id <- c( which(colnames(D) == nombres_num[1]) ,   which(colnames(D) == nombres_num[2])   )
+          
+          v <- v_potencial
+          
+          # actualizacion de la distancia ultrametrica m
+          m <- D[which(colnames(D)==nombres_num[1]), which(colnames(D)==nombres_num[2])]
+          
+          # actualizacion de mn
+          mn <- c(mn, list( v ) )
+        }
+        
+      } else { # en caso que se proponga la fusion de dos clusters, en donde uno de ellos tenga solo un nodo
+        # 25-oct-19: primero calculemos dc para la union de los dos cluster en te segun fusion original con dmst:
+        v_potencial <-  c(mn[[ te[te>0] ]],  te[te<0]     )
+        d_cpl_potencial <- acople_distance_sum2(J, v_potencial) 
+        
+        # comenzaremos a probar si existe otro nodo que minimice la distancia de acople.
+        num_cluster_anteriores <- length(hay_cluster_anterior) #numero de cluster que tienen mas de 2 nodos
+        lista_nodos_de_clusters <- list()
+        for (n in 1:num_cluster_anteriores) { # aqui guardamos los nodos de los clusters con mas de 2 nodos
+          #el_cluster <- te[n]   te[which(te > 0)]
+          el_cluster <- te[which(te > 0)]
+          #lista_nodos_de_clusters  <- c(lista_nodos_de_clusters, unlist(mn[el_cluster]) )
+          lista_nodos_de_clusters <- c(lista_nodos_de_clusters, (mn[el_cluster]) ) # conjunto de nodos de clusters con mas de 1 nodo.
+        }
+        registro <- matrix(NA, ncol=3, nrow=0)
+        colnames(registro) <- c("cluster_n", "elnodo", "dist_acople") #tengo que ir registrando el cluster (n), el elnodo y distancia_acople entre cluster y elnodo
+        for (n in 1:num_cluster_anteriores) { # ahora buscamos para cada cluster con mas de dos nodos, 
+          # sus nodos adyacentes en el MST que tienen la menor distancia de acople
+          #registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=te[n])
+          registro_interno <- find_ady_dc(v=unlist(lista_nodos_de_clusters[n]), n=el_cluster, mst_g = mst_g, J = J)
+          registro <- rbind(registro, registro_interno)
+        }
+        # veamos cual seria la proxima fusion de acuerdo a la minima distancia de acople
+        id2 <- which.min(registro[,3])
+        proxima_fusion_tentativa <- registro[id2, c(1,2)]
+        d_cpl <- registro[id2, 3]
+        
+        # step 6.5: comparamos si la distancia de acople dc de "proxima_fusion_tentativa" es menor que la distancia
+        # de acople del cluster original d_cpl_potencial.
+        # hay que comprar con d_clp_potencia L502
+        if (d_cpl < d_cpl_potencial) {
+          # Step 5: verificar si nodo seleccionado para fusion pertenece a otro cluster
+          nodo_a_fusionar <- as.character(proxima_fusion_tentativa[2])
+          for (n in 1:length(mn) ) {
+            if ( nodo_a_fusionar %in% mn[[n]] ) {
+              proxima_fusion <-  c(proxima_fusion_tentativa[1], n) 
+              break
+            } else { proxima_fusion  <- proxima_fusion_tentativa }
+          }
+          
+          #ahora tendriamos que ver si el nodo que esta en registro[id, 2] pertenece ya a otro cluster mas grande
+          nombres_num <- as.numeric(proxima_fusion)
+          proxima_fusion <- as.numeric(proxima_fusion)
+          
+          # Step 6: determinar todos los nodos de los clusters fusionados
+          hay_nodos <- which(proxima_fusion < 0)
+          if ( length(hay_nodos) > 0) {
+            v <-  c(mn[[proxima_fusion[proxima_fusion > 0]]]   , as.character( proxima_fusion[proxima_fusion<0] ) ) 
+          } else {
+            v <- c( mn[[ proxima_fusion[1] ]], mn[[ proxima_fusion[2] ]])     #<<<<<<<corregido el 241019
+          }
+          
+          #v <- c( unlist(lista_nodos_de_clusters), nombres_num[which(nombres_num < 0)] )
+          
+          # actualizacion del id, necesario para borrar las filas y columnas en D
+          #id <- c( which(colnames(D) == proxima_fusion_numeric[1]) ,   which(colnames(D) == proxima_fusion_numeric[2])   )
+          id <- c( which(colnames(D) == nombres_num[1]) ,   which(colnames(D) == nombres_num[2])   )
+          
+          # actualizacion de la distancia ultrametrica m
+          m <- D[which(colnames(D)==nombres_num[1]), which(colnames(D)==nombres_num[2])]
+          
+          # actualizacion de mn
+          mn <- c(mn, list( v ) )
+        } else {
+          v <- v_potencial
+          nombres_num <- te
+          id <- c( which(colnames(D) == nombres_num[1]) ,   which(colnames(D) == nombres_num[2])   )
+          m <- D[which(colnames(D)==nombres_num[1]), which(colnames(D)==nombres_num[2])]
+          mn <- c(mn, list( v ) )
+        }
+
+      }
+    }
+    # # # # este es el cerebro de la funcion
+    
+    # calculo de la distancia MST
+    d_mst <- find_mst_barrier(mst_g, v)
+    # calculo de las distancias de acople
+    d_cpl <- acople_distance_sum2(J, v)  ### > OJo que esta funcion esta en acople_distance_sum_function.R
+    
+    merge[it,] <- as.numeric(c(nombres_num, it, m, d_mst, d_cpl)) #  nuevo: se coloca nodo1 (fusion) / nodo2 (fusion) /nombre del nuevo cluster / distancia a la que se unen
+    
+    # # # # # # # # # Upgrading the distance matrix
+    # fila id[1] y columna id[2] se deben borrar
+    Dold <- D
+    D <- D[-id, -id]
+    
+    # pero antes hay que buscar las distancias minimas entre los spins restantes y el cluster
+    if (length(Dold) <= 9) { # cuando la matriz es de 3X3, no se puede ejecutar directamente la funcion find_min_dist
+      colno <- colnames(Dold) # nombres de columnas o fila de Dold
+      #https://www.youtube.com/watch?v=8hSYEXIoFO8&t=78s
+      #sel <- colno[!(colno %in% nombres)] # nodo identificado
+      sel <- colno[!(colno %in% as.character(nombres_num) )] # nodo identificado 16-oct-19
+      col <- which(colno == sel) # identificamos la columna donde esta el nodo sel.
+      dit <- vector()
+      dit <- c(dit,min(Dold[, col])) # la distancia minima
+      nombres_ <- sel
+    } else {
+      #temp <- find_min_dist(D, Dold, nombres)
+      temp <- find_min_dist(D = D, Dold = Dold, nombres = as.character(nombres_num)) # 16-oct-19
+      dit <- temp$dit # dit son las minimias distancias de cluster fusionado en la iteracion anterior a todos los demas clusters que quedan
+      nombres_ = temp$nombres_ # nombres_ son los nombres de los nodos que estan a minima distancia.
+    }
+    
+    #ahora tengo que poner los valores en fila.columna de D.
+    D <- put_dis(D, dit, nombres_, N, it)
+    print(paste("Iteration: ", it))
+  } # Fin de la iteracion
+  
+  # # # # LAST ITERATION # # # # 
+  # Last iteration: when it = N - 1
+  it <- it + 1
+  rl <- cluster_find_name(D)
+  id <- rl$id
+  nombres <- rl$nombres
+  m <- rl$m
+  nombres_num <- as.numeric(nombres) # nuevo
+  clusters_con_mas_de_un_nodo <- nombres_num[nombres_num > 0]
+  if (length(clusters_con_mas_de_un_nodo ) > 1) { # En caso que se vayan a fusionar dos clusters que a su vez contienen varios nodos cada uno.
+    temp <- c()
+    for (n in 1:length(clusters_con_mas_de_un_nodo)) {
+      temp <- c(temp,  unlist(   mn[ clusters_con_mas_de_un_nodo[n] ] )  )
+    }
+    v <- temp
+  } else {
+    temp <- c()
+    for (n in 1:length(clusters_con_mas_de_un_nodo)) {
+      temp <- c(nombres_num[nombres_num < 1],  unlist(   mn[ clusters_con_mas_de_un_nodo ] )  )
+    }
+    #temp <- c(nombres_num, unlist(mn[el_cluster]) ) 
+    v <- temp
+  }
+  # calculo de la distancia MST
+  d_mst <- find_mst_barrier(mst_g, v)
+  # calculo de las distancias de acople
+  d_cpl <- acople_distance_sum2(J, v)  ### > OJo que esta funcion esta en acople_distance_sum_function.R
+  merge[it,] <- as.numeric(c(nombres_num, it, m, d_mst, d_cpl)) 
+  print(paste("Iteration: ", it))
+  # retorno de los resultados matriz merge
+  return(merge)
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
 
@@ -372,7 +651,19 @@ plot(hc)
 
 
 
-
+# BORAR DESPUES
+# 24-10-19   tratando de ver que pasa con V4 de hirarchical function.
+rep = 100
+Nn = 6
+for (i in 1:rep) {
+  print(paste("starting iteration", i))
+  ot <- create_coupling(Nn=6, media=0, sj=1, lw=-3, up=3)
+  J <- ot$J
+  D <- ot$D
+  mst_g <- create_mst(J=J, D=D)
+  hierarchical_clustering_v4b(D, J=J, mst_g)
+  print(paste("ending iteration", i))
+}
 
 
 

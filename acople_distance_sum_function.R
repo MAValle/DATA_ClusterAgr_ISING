@@ -28,6 +28,7 @@ acople_distance_sum <- function(J, y) {
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 #sep, 23, 2019
+# input: matriz de acople J, y y = vector con el nombre de los nodos en formato numerico
 # lo mismo que en acople_distance_sum , dado y, el vector de nombres con los spins
 # utilizamos el acceso a la matriz J, pro los nombres.
 acople_distance_sum2 <- function(J, y) {

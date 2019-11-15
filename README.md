@@ -47,17 +47,23 @@ Nota: la version testing_hierarchical_clusteringV7.R es una verison antigua de b
 
  **testing_hierarchical_clusteringV8.R**: Esta version es la misma que la V7b, pero en este caso, cuando hay dos cluster que se van a fusionar en donde los dos tienen más de 1 nodo, se buscar para cad acluster, otro nodo u otro cluster que logre la menor distancia de acople. En la version V7b, cuando teníamos este caso, los dos cluster se unían sin buscar minima distancia de acople.
 
+**testing_hierarchical_clusteringV9.R**: Se crea ahora una algoritmo mejorado de hierarchical_clustering_v4 que parte de la base de ir uniendo clusters con el menor numero de nodos asumiendo que mientras mas nodos tiene un cluster, la distancia de acople siempre es mayor.
 
+**testing_hierarchical_clusteringV10.R**: Este script consiste en ensayo y test para crear la funcion hierarchical_clustering_greedy que lo que hace es utilizar algoritmo greedy para ir fusionando pares de clusters basado en la distancia de acople, intentando minimizarla.
+
+**testing_hierarchical_clusteringV11.R**: Este script consiste en ensayo y test para crear la funcion hierarchical_clustering_probabilistic_greedy que lo que hace es una aproximación greedy, pero probabilistica, es decir, para evitar que el greedy se quede atascado en un optimo local, con un cierto nivel de probabilidad vamos suitchiando entre una fusion greedy determinista y una fusion greedy probabilistica. Esta ultima consiste en determinar la fusion de dos cluster en forma aleatoria.
 
 **functions_hclust.R**: Conjunto de functiones para hacer clustering jerarquico HAC con single linkage a partir de una matriz de distancia $D$. 
 
 
 
+**simulation_hc_V1.R**: En este script vamos a utilizar la funcion hierarchical_clustering_v2 y funcion hierarchical_clustering_v4 que estan en functions_hclust.R.
 
+**simulation_hc_V2.R**: En este script vamos a utilizar la funcion hierarchical_clustering_v2 y funcion hierarchical_clustering_v4 que estan en functions_hclust.R
 
+**simulation_hc_V3.R**: # En este script vamos a simular clusterig jerarquicos de distintos tamanos de nodos de N= 20, 30, 50, 100, 250, y 500 con matrices de acoples con <J>=0. Luego haremos una grafica scatterplot en que graficamos en el eje X la distancia de acople del algoritmo normal, y en el eje Y la distancia de acople del algoritmo modificado para cada una de las iteraciones.
 
-
-
+**simulation_hc_V4.R**: En este script vamos a simular clusterig jerarquicos de distintos tamanos de nodos de N=  25, 50, 100 con matrices de acoples con <J>. La intencion es hacer un mapa de calor en que en el eje X va la iteracion de merge (para un determinado numero de nodos) y en el eje Y va <J>. Es decir, para un determinado numero de nodos, fabricamos una matriz con las iteraciones en un eje y <J> por otro, y la  en la superficie graficamos la distancia de acople. Podemos hacer el mapa de calor, uno para la distancia de acople de merge2, otra de merge5 y otra que sea la diferencia.
 
 
 
@@ -134,6 +140,18 @@ Nota: La version 1 de  mst_distances_and_energies.R  viene de vienen originalmen
 **functions_hclust.R**: varias funciones necesarias para llevar a cabo hierarchical cluster que estan en la serie de scripts de testing_hierarchical_clusteringVxxx.R
 
 **acople_distance_sum_function.R**: esta funcion calcula la sumatoria de las acoples convertidas en distancia previamente.
+
+**hierarchical_clustering_greedy_function.R**: Lleva a cabo un hiearchical clustering utilizando greedy approach. 
+
+**hierarchical_clustering_probabilistic_greedy_function.R**: Lleva a cabo un hiearchical clustering utilizando greedy approach pero en forma probabilistica, es decir, en cad aoportunidad de fusion de dos clusters, con cierta probabilidad se decide hacer la fusion basado en la minima distancia de acople o en forma aleatoria. Esta ultima modalidad nos permite salir eventualmente de un optimo local.
+
+**pick_a_cluster_function.R**: esta funcion selecciona al azar un par de cluster de la matriz de distancia de acoples. Esta funcion se utiliza en la funcion hierarchical_clustering_greedy y hierarchical_clustering_probabilistic_greedy_function.
+
+**find_min_distcp_function.R**: esta funcion lo que hace es actualizar la matriz de distancias de acople. Esta funcion se utiliza en las funciones hierarchical_clustering_greedy y hierarchical_clustering_probabilistic_greedy_function.
+
+
+
+
 
 
 
