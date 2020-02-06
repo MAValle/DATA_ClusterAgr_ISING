@@ -1,5 +1,5 @@
 
-
+# name: hierarchical_clustering_probabilistic_greedy_function.R
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -37,6 +37,7 @@ hierarchical_clustering_probabilistic_greedy <- function(D, J, trh=0) {
       m <- rl$m
       # leaves (original spins) will be negative, merged clusters will be positive starting from 1, 2, ...
       nombres_num <- as.numeric(nombres) # nombres de los spins
+      prob <- 1
     }
 
     # # # # # # # # # poniendo los nombres reales de los spins que componen el cluster recien formado.

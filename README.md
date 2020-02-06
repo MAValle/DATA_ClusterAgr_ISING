@@ -53,7 +53,11 @@ Nota: la version testing_hierarchical_clusteringV7.R es una verison antigua de b
 
 **testing_hierarchical_clusteringV11.R**: Este script consiste en ensayo y test para crear la funcion hierarchical_clustering_probabilistic_greedy que lo que hace es una aproximación greedy, pero probabilistica, es decir, para evitar que el greedy se quede atascado en un optimo local, con un cierto nivel de probabilidad vamos suitchiando entre una fusion greedy determinista y una fusion greedy probabilistica. Esta ultima consiste en determinar la fusion de dos cluster en forma aleatoria.
 
-**functions_hclust.R**: Conjunto de functiones para hacer clustering jerarquico HAC con single linkage a partir de una matriz de distancia $D$. 
+**testing_hierarchical_clusteringV12.R**: Este script lo que hace es buscar la manera de obtener la distancia de acople en cada iteracion del proceso clustering con modularidad utilizando la funcion cluster_fast_greedy de igraph. El proceso es basicamente ejecutar la función, y a partir del output de la funcion determinar los nodos que se van fusionando en  cada iteración, y luego sacarles la distancia de acople.
+
+**testing_hierarchical_clusteringV13.R**: Basado en los resultados de simulation_hc_V6.R y simulation_hc_V7.R, vemos que al agregar mas randomness al algoritmo greedy, la media de distancia de acople $d_c$ va aumentando en relación al greedy deterministico. Asimismo, la varianza tambien aumenta, lo cual indica que a veces, el greedy probabilistico hace muy bien el trabajo buscando una distancia de acople menor al greedy deterministico, pero a veces tambien lo hace muy mal. Por lo tanto, es de suponer, que el greedy probabilistico necesita una ayuda. Lo que hacemos en este script es dar un punto de partida basado en el greedy deterministico, para mejor aun mas el desempeño del greedy probabilistico, disminuyendo su variabilidad en los resultado y tratando de estar siempre mejor que el deterministico.
+
+
 
 
 
@@ -61,9 +65,25 @@ Nota: la version testing_hierarchical_clusteringV7.R es una verison antigua de b
 
 **simulation_hc_V2.R**: En este script vamos a utilizar la funcion hierarchical_clustering_v2 y funcion hierarchical_clustering_v4 que estan en functions_hclust.R
 
-**simulation_hc_V3.R**: # En este script vamos a simular clusterig jerarquicos de distintos tamanos de nodos de N= 20, 30, 50, 100, 250, y 500 con matrices de acoples con <J>=0. Luego haremos una grafica scatterplot en que graficamos en el eje X la distancia de acople del algoritmo normal, y en el eje Y la distancia de acople del algoritmo modificado para cada una de las iteraciones.
+**simulation_hc_V3.R**: En este script vamos a simular clusterig jerarquicos de distintos tamanos de nodos de N= 20, 30, 50, 100, 250, y 500 con matrices de acoples con <J>=0. Luego haremos una grafica scatterplot en que graficamos en el eje X la distancia de acople del algoritmo normal, y en el eje Y la distancia de acople del algoritmo modificado para cada una de las iteraciones.
 
-**simulation_hc_V4.R**: En este script vamos a simular clusterig jerarquicos de distintos tamanos de nodos de N=  25, 50, 100 con matrices de acoples con <J>. La intencion es hacer un mapa de calor en que en el eje X va la iteracion de merge (para un determinado numero de nodos) y en el eje Y va <J>. Es decir, para un determinado numero de nodos, fabricamos una matriz con las iteraciones en un eje y <J> por otro, y la  en la superficie graficamos la distancia de acople. Podemos hacer el mapa de calor, uno para la distancia de acople de merge2, otra de merge5 y otra que sea la diferencia.
+**simulation_hc_V4.R**: En este script vamos a simular clustering jerarquicos de distintos tamanos de nodos de N=  25, 50, 100 con matrices de acoples con <J>. La intencion es hacer un mapa de calor en que en el eje X va la iteracion de merge (para un determinado numero de nodos) y en el eje Y va <J>. Es decir, para un determinado numero de nodos, fabricamos una matriz con las iteraciones en un eje y <J> por otro, y la  en la superficie graficamos la distancia de acople. Podemos hacer el mapa de calor, uno para la distancia de acople de merge2, otra de merge5 y otra que sea la diferencia.
+
+**simulation_hc_V5.R**: En este script simulamos una matriz J y comparamos las distancias de acople $d_c$ para distinto numero de clusters formados con greeddy algorithm con distintos niveles de aleatoriadad. Los resultados se puede ver en results_from_simulation_hc_V5_191119(b).pdf y también en results_from_simulation_hc_V5_191119.pdf.
+
+**simulation_hc_V6.R**:  En este script simulamos varias matrices de acople N(0,1) y con N=20 para graficar las distancias de acople en cada iteraciones en cada uno de los algoritmos de prueba.
+
+**simulation_hc_V7.R**: En este script simulamos 1 (un) ejemplo con N=25 nodos, para mostar como caso puntual y comprar entre todos los algoritmos. Los resultados se pueden ver en results_from_simulation_hc_V7_261219.pdf y en results_from_simulation_hc_V7_261219(2).pdf. Lo que vemos es que mientras le agregamos mas randomness al proceso greedy, la *media* de la distancia de acoples es cada vez mas mala en relacion al greedy deterministico, lo cual  tiene sentido puesto que al ser mas random, es como ir con  los ojos cerrados, y tendremos a veces mala suerte o buena suerte en mejorar la distancia de acople en relacion al greedy deterministico. También vemos que vemos que mientras mas randomnes le agregamos al proceso, habra mas varianza, lo que significa que podemos tener muy buenos resultados o muy malos resultados en referencia al grreedy deterministico. 
+
+**simulation_hc_V8.R**: En este script analizamos el ejemplo real de la bases de datos transaccional que he utilizado en los papers de ICANN con 25 nodos, para calcular los dendogramas con MST y con greedy. Adicionalmente, vemos las simulaciones con greedy probabilistico.
+
+
+
+
+
+**computing_silhouettes_V1.R**:  Tratamos de encontrar una distancia k de corte en el greedy deterministico (gamma=1) tal que el promedio de silhouette o el promedio de a(i) sea el mas grande posible. 
+
+**computing_silhouettes_V2.R**: Dada una solucion a una distancia de acople h, encontramos consistencia interna utilizando la funcion my_own_silhouette en  my_own_silhouette_function.R. Ver pag. 275-277 apuntes.
 
 
 
@@ -101,7 +121,7 @@ Hacemos lo mismo que esta en mstdistances_and_energies.R, utilizando sus mismos 
 
 \3. inicio de loop: buscar otro vertex adyacente a v en el mst, que minimice DEc (ver paper congreso) agregar ese vertex a tableau
 
-\4. volver a paso 3 hasta desired number of size of the cluster cluster seria el conjunto de todos los elementos de la columna vertgex en tableau.
+\4. volver a paso 3 hasta desired number of size of the cluster cluster seria el conjunto de todos los elementos de la columna vertex en tableau.
 
 Nota: La version 1 de  mst_distances_and_energies.R  viene de vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
 
@@ -121,13 +141,21 @@ Nota: La version 1 de  mst_distances_and_energies.R  viene de vienen originalmen
 
 **mst_plot_forpaper.R**: Replcia de figuras de MST para paper.
 
+**figure_netcoupling_for_IEEE**: 091220 -  En este script replicamos la figura "coupling_network_for_IEEE.eps" Aqui tomamos exactamente la figura que se hizo para la conferencia ICANN 2019 munich, hecha en paper_congreso_figure_replica3.R, pero con distinto orden y distinto colores para que no se vea  igual.
+
+**heatmaps_figures.R**:  En este script nos enfocamos en hacer las graficas de  heatmap, que originalmente iniciamos en  simulation_hc_V8.R para el caso real de 25 nodos (datos de verdad) Este script reproduce los heatmaps que iran en el paper.
+
+**figure_netcoupling_for_IEEE.R**:  En este script replicamos la figura "figure_coupling_network_for_IEEE.eps" Aqui tomamos exactamente la figura que se hizo para la conferencia ICANN 2019 munich, hecha en paper_congreso_figure_replica3.R, pero con distinto orden y distinto colores para que no se vea  igual.
+
+
+
 
 
 ####Funciones:
 
 **entropies_functions.R**: vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
 
-**network_functions_v1.R**: vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
+**network_functions_v1.R**: vienen originalmente de PAPER_MBA by solving the inverse ISING problem.
 
 **ising_functions_v3.R**: vienen originalmente de PAPER_MBA by solving teh inverse ISING problem.
 
@@ -137,17 +165,31 @@ Nota: La version 1 de  mst_distances_and_energies.R  viene de vienen originalmen
 
 **is_integer0_function.R**: función para testear si un vector esta vacio.
 
-**functions_hclust.R**: varias funciones necesarias para llevar a cabo hierarchical cluster que estan en la serie de scripts de testing_hierarchical_clusteringVxxx.R
+**functions_hclust.R**: Conjunto de functiones para hacer clustering jerarquico HAC con single linkage a partir de una matriz de distancia $D$. 
 
 **acople_distance_sum_function.R**: esta funcion calcula la sumatoria de las acoples convertidas en distancia previamente.
 
 **hierarchical_clustering_greedy_function.R**: Lleva a cabo un hiearchical clustering utilizando greedy approach. 
 
-**hierarchical_clustering_probabilistic_greedy_function.R**: Lleva a cabo un hiearchical clustering utilizando greedy approach pero en forma probabilistica, es decir, en cad aoportunidad de fusion de dos clusters, con cierta probabilidad se decide hacer la fusion basado en la minima distancia de acople o en forma aleatoria. Esta ultima modalidad nos permite salir eventualmente de un optimo local.
+**hierarchical_clustering_probabilistic_greedy_function.R**: Lleva a cabo un hiearchical clustering utilizando greedy approach pero en forma probabilistica, es decir, en cada oportunidad de fusion de dos clusters, con cierta probabilidad se decide hacer la fusion basado en la minima distancia de acople o en forma aleatoria. Esta ultima modalidad nos permite salir eventualmente de un optimo local.
 
 **pick_a_cluster_function.R**: esta funcion selecciona al azar un par de cluster de la matriz de distancia de acoples. Esta funcion se utiliza en la funcion hierarchical_clustering_greedy y hierarchical_clustering_probabilistic_greedy_function.
 
 **find_min_distcp_function.R**: esta funcion lo que hace es actualizar la matriz de distancias de acople. Esta funcion se utiliza en las funciones hierarchical_clustering_greedy y hierarchical_clustering_probabilistic_greedy_function.
+
+**create_coupling_function.R**: Funcion que crea matriz de acople y de distancia con media mu, desv estandar de acople sj y con Nn nodos.
+
+**recovering_couplingdistances_from_fastgreedyigraph_function.R**: Set de funciones para recuperar la distancia de acople a partir  de community detection using modularity with cluster_fast_greedy of igraph. developed in testing_hierarchical_clusteringV12.R.
+
+**post_hc_analysis_function.R**: Set de funciones para analizar los resultados de  varias simulaciones de los algoritmos de hiearchical clustering.
+
+**recovering_couplingdistances_from_fastgreedyigraph_function.R**: Set de funciones para recuperar la distancia de acople a partir  de community detection using modularity with cluster_fast_greedy of igraph. Developed in testing_hierarchical_clusteringV12.R
+
+**cophonetic_cor_function.R**: Funcion para calcular la correlacion cofonetica.
+
+**silhouette_byhand_function.R**: Calculamos silhuette. He comprobado que esta funcion da lo mismo resultados que la funcion silhouette de la librerya cluster. Link:  https://en.wikipedia.org/wiki/Silhouette_(clustering) silhouette: a(i) = 1/(#Ci - 1) sum d(i,j)  suma de todas las distancias desde i a j, donde j son elementos intracluster. b(i) = min (1/#Ck) sum d(i,j) min de la suma de las distancias desce i a j donde j son elementos fuera del cluster donde esta i.
+
+**my_own_silhouette_function.R**:  computing my own measure of internal consistency simmilar to the silhouette Given a solution with a coupling distance h, we have for each element of the system their corresponding cluster. From this solution we want compute a internal consistency to determine which  groups of clusters are more choesive and find whether teh solution has a good internal consistency.
 
 
 

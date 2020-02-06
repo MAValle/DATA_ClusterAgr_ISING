@@ -37,7 +37,7 @@ cluster_find_name <- function(D){
 #     nombres : nombres de los nodos fusionados en la iteracion
 # output: dit = vector con las minimias distancias de cluster fusionado en la iteracion anterior
 #         a todos los demas clusters que quedan. Se utiliza single linkage.
-# Nota: esta funcion funciona solamente cuando D es de 4X4 hacia arriba, es decir cuando hay más de 9 o mas elementos en D.
+# Nota: esta funcion funciona solamente cuando D es de 4X4 hacia arriba, es decir cuando hay m??s de 9 o mas elementos en D.
 # Nota: el vector "nombres" debe estar cargado en memoria.
 find_min_dist <- function(D, Dold, nombres) {
   dit <- vector()
@@ -468,10 +468,10 @@ hierarchical_clustering_v3 <- function(D, J, mst_g) {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # 17-oct-19
 # Esta version es la misma que la hierarchical_clustering_v3, pero en este caso, cuando hay dos 
-# cluster que se van a fusionar en donde los dos tienen más de 1 nodo, 
+# cluster que se van a fusionar en donde los dos tienen mas de 1 nodo, 
 # se buscar para cada cluster, otro nodo u otro cluster que logre la menor 
-# distancia de acople. En la version hierarchical_clustering_v3, cuando teníamos este caso, los dos 
-# cluster se unían sin buscar minima distancia de acople.
+# distancia de acople. En la version hierarchical_clustering_v3, cuando ten??amos este caso, los dos 
+# cluster se un??an sin buscar minima distancia de acople.
 # nota: 131019: se incorpora como input el mst_g y matriz de acople J
 hierarchical_clustering_v4 <- function(D, J, mst_g) {
   # # # Inicializacion de la matriz merge que es el output
@@ -772,7 +772,7 @@ is.integer0 <- function(x){
 # 3. enames: vector con los combres que quiero ponerle a cada elemento. El largo debe ser igual
 #           al numero de columnas o numero de filas de D
 # OUTPUT
-# hc: lista con 4 objetos con toda la información  del dendograma que necesita R para plotear
+# hc: lista con 4 objetos con toda la informaci??n  del dendograma que necesita R para plotear
 to_dendo <- function(D, merge, enames) {
   # 1
   # para genera rl hc$order, necesitamos identificar de merge[,c(1,2)] todos los

@@ -26,11 +26,31 @@ acople_distance_sum <- function(J, y) {
 # sumdist <- acople_distance_sum(J, y)
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+#Jan, 12, 2020
+# Los mismo que en acople_distance_sum, pero sin distancias
+# es decir, sumando solo los acoples
+acople_energy_sum <- function(J, y) {
+  sumdist <- 0
+  combinaciones <- combn(y,2)
+  lk <- ncol(combinaciones)
+  for (i in 1:lk) {
+    idx <- combinaciones[, i]
+    cupl <- J[idx[1], idx[2]]
+    #dcupl <- sqrt(3 - cupl)
+    sumdist <- sumdist + cupl
+  }
+  return(sumdist)
+}
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
+
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #  
 #sep, 23, 2019
 # input: matriz de acople J, y y = vector con el nombre de los nodos en formato numerico
 # lo mismo que en acople_distance_sum , dado y, el vector de nombres con los spins
-# utilizamos el acceso a la matriz J, pro los nombres.
+# utilizamos el acceso a la matriz J, por los nombres.
 acople_distance_sum2 <- function(J, y) {
   sumdist <- 0
   combinaciones <- combn(y,2)
