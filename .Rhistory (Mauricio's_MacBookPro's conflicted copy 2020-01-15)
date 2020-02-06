@@ -1,0 +1,512 @@
+#node.size = V(net)$magn,
+#node.color = V(mst_g)$color, #red is positive
+node.color = "grey87", #para paper congreso
+size = 8,
+label=TRUE,
+label.size=3,
+edge.alpha = 0.8,
+#edge.color = E(mst_g)$color,
+edge.color = "royalblue4",
+ggtitle("MST"),
+edge.size = 9/((E(mst_g)$weight-min(E(mst_g)$weight))/sd(E(mst_g)$weight)+1))
+#edge.size = 5*abs(E(mst_g)$weight))
+cairo_ps("figure.eps")
+multiplot(p1, p2, cols=1)
+dev.off()
+multiplot(p1, p2, cols=1)
+#https://www.rdocumentation.org/packages/GGally/versions/1.3.2/topics/ggnet
+#https://briatte.github.io/ggnet/
+p2 <- ggnet2(mst_g, alpha = 0.85, # MST
+#mode = "circle",
+mode = "kamadakawai",
+#mode = "fruchtermanreingold",
+#node.size = V(net)$magn,
+#node.color = V(mst_g)$color, #red is positive
+node.color = "grey87", #para paper congreso
+size = 8,
+label=TRUE,
+label.size=3,
+edge.alpha = 0.8,
+#edge.color = E(mst_g)$color,
+edge.color = "royalblue4",
+ggtitle("MST"),
+edge.size = 9/((E(mst_g)$weight-min(E(mst_g)$weight))/sd(E(mst_g)$weight)+1))
+#edge.size = 5*abs(E(mst_g)$weight))
+multiplot(p1, p2, cols=1)
+#https://www.rdocumentation.org/packages/GGally/versions/1.3.2/topics/ggnet
+#https://briatte.github.io/ggnet/
+p2 <- ggnet2(mst_g, alpha = 0.85, # MST
+#mode = "circle",
+mode = "kamadakawai",
+#mode = "fruchtermanreingold",
+#node.size = V(net)$magn,
+#node.color = V(mst_g)$color, #red is positive
+node.color = "grey87", #para paper congreso
+size = 8,
+label=TRUE,
+label.size=3,
+edge.alpha = 0.8,
+#edge.color = E(mst_g)$color,
+edge.color = "royalblue4",
+ggtitle("MST"),
+edge.size = 9/((E(mst_g)$weight-min(E(mst_g)$weight))/sd(E(mst_g)$weight)+1))
+#edge.size = 5*abs(E(mst_g)$weight))
+multiplot(p1, p2, cols=1)
+# # # # # # # # # # # # # # # # # # LOADING DATA AND FUNCTIONS # # # # # # # # # # # # # # # # # # # # # # #
+# Carga de datos,
+# igual que en clusteragrr_v1.R
+rm(list = ls())
+# LOADING DATA BASE REAL DATA
+load('new_inferring_parameters_environment270219.RData')
+rm(list=setdiff(ls(), c("J", "wb" ) ))
+#load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
+source("functions_hclust.R") # funciones varias
+source("hierarchical_clustering_v2_function.R")
+source("hierarchical_clustering_v5_function.R")
+source("hierarchical_clustering_greedy_function.R")
+source("hierarchical_clustering_probabilistic_greedy_function.R")
+source("create_coupling_function.R") # crea matriz J de acoples y D de distancias para simular
+source("create_mst_function.R") # crea MST a partir de una matriz de acople.
+source("acople_distance_sum_function.R") # suma las distantcias de acople dc
+source("find_ady_dc_function.R") # encuentra los nodos adyacentes en un mst dado un nodo
+source("get_num_nodes_function.R") # nos dice el numero de nodos que tiene el par de clusters a fusionar
+source("get_num_nodes_of_ady_clusters_function.R") # nos dice informacion del numero de nodos que son adyacentes a un cluster
+source("get_name_of_the_cluster_function.R") # dado el nombre de un nodo, nos dice a que cluster pertenece
+source("get_nodes_of_the_cluster_function.R") # nos da los nodos involucrados en un cluster.
+source("simulation_hc_function.R") # Genera una simulacion de hierarchical clustering con algoritmo single linkage y modificado.
+source("find_min_distcp_function.R") # funcion que encuentra min dist acople en greedy alg.
+source("pick_a_cluster_function.R")
+# funciones para recuperar distancias de acople para los clusters
+# que vienen de fast_greedy para calcular clustering con modularidad.
+source("recovering_couplingdistances_from_fastgreedyigraph_function.R")
+# Funciones para hacer post analysis con las simulaciones de HC.
+source("post_hc_analysis_function.R")
+source("find_mst_barrier_function.R")
+source("is_integer0_function.R")
+source("entropies_functions.R") # nos interesa aqui get_energy function
+source("multiplot_function.R")
+source("entropies_functions.R")
+source("network_functions_v1.R")
+library(igraph)
+library(Matrix)
+library(ggplot2)
+# Conforming the DISTANCES Network
+real_names <- colnames(wb)
+D <- sqrt(3 - as.matrix(J)) # distance
+# Por ahora, tenemos que enumerar los productos en forma consecutiva
+# despues, para el dendograma, le ponemos los nombres reales
+colnames(D) <- rownames(D) <- -c(1:length(colnames(J)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+colnames(J) <- rownames(J) <- -c(1:length(colnames(J)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+diag(D) <- rep(Inf, length(colnames(J)))
+# # # # # # # # # # # # # # # # # # LOADING DATA AND FUNCTIONS # # # # # # # # # # # # # # # # # # # # # # #
+# Carga de datos,
+# igual que en clusteragrr_v1.R
+rm(list = ls())
+# LOADING DATA BASE REAL DATA
+load('new_inferring_parameters_environment270219.RData')
+rm(list=setdiff(ls(), c("J", "wb" ) ))
+#load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
+source("functions_hclust.R") # funciones varias
+source("hierarchical_clustering_v2_function.R")
+source("hierarchical_clustering_v5_function.R")
+source("hierarchical_clustering_greedy_function.R")
+source("hierarchical_clustering_probabilistic_greedy_function.R")
+source("create_coupling_function.R") # crea matriz J de acoples y D de distancias para simular
+source("create_mst_function.R") # crea MST a partir de una matriz de acople.
+source("acople_distance_sum_function.R") # suma las distantcias de acople dc
+source("find_ady_dc_function.R") # encuentra los nodos adyacentes en un mst dado un nodo
+source("get_num_nodes_function.R") # nos dice el numero de nodos que tiene el par de clusters a fusionar
+source("get_num_nodes_of_ady_clusters_function.R") # nos dice informacion del numero de nodos que son adyacentes a un cluster
+source("get_name_of_the_cluster_function.R") # dado el nombre de un nodo, nos dice a que cluster pertenece
+source("get_nodes_of_the_cluster_function.R") # nos da los nodos involucrados en un cluster.
+source("simulation_hc_function.R") # Genera una simulacion de hierarchical clustering con algoritmo single linkage y modificado.
+source("find_min_distcp_function.R") # funcion que encuentra min dist acople en greedy alg.
+source("pick_a_cluster_function.R")
+# funciones para recuperar distancias de acople para los clusters
+# que vienen de fast_greedy para calcular clustering con modularidad.
+source("recovering_couplingdistances_from_fastgreedyigraph_function.R")
+# Funciones para hacer post analysis con las simulaciones de HC.
+source("post_hc_analysis_function.R")
+source("find_mst_barrier_function.R")
+source("is_integer0_function.R")
+source("entropies_functions.R") # nos interesa aqui get_energy function
+source("multiplot_function.R")
+source("entropies_functions.R")
+source("network_functions_v1.R")
+library(igraph)
+library(Matrix)
+library(ggplot2)
+# Conforming the DISTANCES Network
+real_names <- colnames(wb)
+D <- sqrt(3 - as.matrix(J)) # distance
+colnames(D) <- rownames(D) <- -c(1:length(colnames(J)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+colnames(J) <- rownames(J) <- -c(1:length(colnames(J)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+diag(D) <- rep(Inf, length(colnames(J)))
+real_names
+colnames(D)
+-c(1:length(colnames(J)) )
+colnames(J)
+# # # # # # # # # # # # # # # # # # LOADING DATA AND FUNCTIONS # # # # # # # # # # # # # # # # # # # # # # #
+# Carga de datos,
+# igual que en clusteragrr_v1.R
+rm(list = ls())
+# LOADING DATA BASE REAL DATA
+load('new_inferring_parameters_environment270219.RData')
+rm(list=setdiff(ls(), c("J", "wb" ) ))
+head(J)
+-c(1:length(colnames(wb))
+)
+#load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
+source("functions_hclust.R") # funciones varias
+source("hierarchical_clustering_v2_function.R")
+source("hierarchical_clustering_v5_function.R")
+source("hierarchical_clustering_greedy_function.R")
+source("hierarchical_clustering_probabilistic_greedy_function.R")
+source("create_coupling_function.R") # crea matriz J de acoples y D de distancias para simular
+source("create_mst_function.R") # crea MST a partir de una matriz de acople.
+source("acople_distance_sum_function.R") # suma las distantcias de acople dc
+source("find_ady_dc_function.R") # encuentra los nodos adyacentes en un mst dado un nodo
+source("get_num_nodes_function.R") # nos dice el numero de nodos que tiene el par de clusters a fusionar
+source("get_num_nodes_of_ady_clusters_function.R") # nos dice informacion del numero de nodos que son adyacentes a un cluster
+source("get_name_of_the_cluster_function.R") # dado el nombre de un nodo, nos dice a que cluster pertenece
+source("get_nodes_of_the_cluster_function.R") # nos da los nodos involucrados en un cluster.
+source("simulation_hc_function.R") # Genera una simulacion de hierarchical clustering con algoritmo single linkage y modificado.
+source("find_min_distcp_function.R") # funcion que encuentra min dist acople en greedy alg.
+source("pick_a_cluster_function.R")
+# funciones para recuperar distancias de acople para los clusters
+# que vienen de fast_greedy para calcular clustering con modularidad.
+source("recovering_couplingdistances_from_fastgreedyigraph_function.R")
+# Funciones para hacer post analysis con las simulaciones de HC.
+source("post_hc_analysis_function.R")
+source("find_mst_barrier_function.R")
+source("is_integer0_function.R")
+source("entropies_functions.R") # nos interesa aqui get_energy function
+source("multiplot_function.R")
+source("entropies_functions.R")
+source("network_functions_v1.R")
+library(igraph)
+library(Matrix)
+library(ggplot2)
+# Conforming the DISTANCES Network
+real_names <- colnames(wb)
+D <- sqrt(3 - as.matrix(J)) # distance
+# Por ahora, tenemos que enumerar los productos en forma consecutiva
+# despues, para el dendograma, le ponemos los nombres reales
+colnames(D) <- rownames(D) <- -c(1:length(colnames(wb)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+colnames(J) <- rownames(J) <- -c(1:length(colnames(wb)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+diag(D) <- rep(Inf, length(colnames(J)))
+# SINGLE LINKAGE
+mst_g <- create_mst(J=J, D=D)
+invisible(capture.output( merge_singlelink <- hierarchical_clustering_v2(D=D, J=J, mst_g=mst_g) ) )
+# GREEDY DETERMINISTIC
+thres <- c(1, 0.5, 0) # 1 greedy deterministico, 0 = greedy random
+invisible(capture.output( merge_greedy_detm <- hierarchical_clustering_probabilistic_greedy(D = D, J = J, trh= thres[1] ) ) )
+# MODULARITY
+N <- length(colnames(J))
+g <- graph_from_adjacency_matrix(D, weighted=TRUE, mode="undirected", diag=FALSE)
+fc <- cluster_fast_greedy(g)
+# is_hierarchical(fc) # TRUE
+# plot_dendrogram(fc)
+result <- get_each_node_of_each_cluster(merge = fc$merges)
+nodes_of_clusters <- result$nodes_of_clusters
+merge <- result$merge
+merge_modularity <- report_merge_from_modularity(merge = result$merge, node_of_clusters = node_of_clusters)
+merge_modularity$cluster <- seq(from=1, to=N-1)
+# formacion de data frame para ggplot
+iteration <- rep(seq(from = 1, to = N-1),3)
+algo <- c(rep("MST", N-1), rep("Modularity", N-1), rep("Algorithm 1", N-1))
+dc <- c(merge_singlelink$dc, merge_modularity$dc, merge_greedy_detm$dc)
+df <- data.frame(Iteration = iteration, Algorithm = algo, CouplingDistance = dc)
+# # # # PREPARING FOR figure_paths_energies_for_IEEE_eps.eps
+# doing the ggplot
+f1 <- ggplot(df, aes(x = iteration, y = log(CouplingDistance), colour = Algorithm)) +
+geom_point(shape=20, size=1.5) + geom_line() +
+#geom_smooth(show.legend = FALSE, fill = "gray", span = 0.3) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(I)), ymax=log(mean+sd/sqrt(I))), width=.2, position=position_dodge(.01)) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(1)), ymax=log(mean+sd/sqrt(1))), width=.2, position=position_dodge(.01)) +
+labs(x ="Iteration", y = "Coupling Distance") +
+theme_linedraw() + theme(legend.position="bottom") +
+scale_x_continuous(breaks = seq(from=1, to=N-1, by=1) ) +
+#scale_y_continuous(breaks = c(-1, 0, 1, 2, 3,4,5,6,7,8)) +
+#scale_y_continuous(breaks = seq(from=1, to=8) ) +
+theme(panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"))
+f1 <- f1 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+#cairo_ps("figure.eps")
+f1
+# # # # PREPARING FOR figure_paths_energies_for_IEEE_eps.eps
+# doing the ggplot
+f1 <- ggplot(df, aes(x = iteration, y = (CouplingDistance), colour = Algorithm)) +
+geom_point(shape=20, size=1.5) + geom_line() +
+#geom_smooth(show.legend = FALSE, fill = "gray", span = 0.3) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(I)), ymax=log(mean+sd/sqrt(I))), width=.2, position=position_dodge(.01)) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(1)), ymax=log(mean+sd/sqrt(1))), width=.2, position=position_dodge(.01)) +
+labs(x ="Iteration", y = "Coupling Distance") +
+theme_linedraw() + theme(legend.position="bottom") +
+scale_x_continuous(breaks = seq(from=1, to=N-1, by=2) ) +
+#scale_y_continuous(breaks = c(-1, 0, 1, 2, 3,4,5,6,7,8)) +
+#scale_y_continuous(breaks = seq(from=1, to=8) ) +
+theme(panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"))
+f1 <- f1 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+#cairo_ps("figure.eps")
+f1
+f1 <- ggplot(df, aes(x = iteration, y = log(CouplingDistance), colour = Algorithm)) +
+geom_point(shape=20, size=1.5) + geom_line() +
+#geom_smooth(show.legend = FALSE, fill = "gray", span = 0.3) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(I)), ymax=log(mean+sd/sqrt(I))), width=.2, position=position_dodge(.01)) +
+#geom_errorbar(aes(ymin=log(mean-sd/sqrt(1)), ymax=log(mean+sd/sqrt(1))), width=.2, position=position_dodge(.01)) +
+labs(x ="Iteration", y = "log of Coupling Distance") +
+theme_linedraw() + theme(legend.position="bottom") +
+scale_x_continuous(breaks = seq(from=1, to=N-1, by=2) ) +
+#scale_y_continuous(breaks = c(-1, 0, 1, 2, 3,4,5,6,7,8)) +
+#scale_y_continuous(breaks = seq(from=1, to=8) ) +
+theme(panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "white"))
+f1 <- f1 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+#cairo_ps("figure.eps")
+f1
+merge_singlelink
+-c(1:length(wb))
+-c(1:length(colnames(wb)))
+real_names
+lookUp1 <- setNames(real_names, -c(1:length(colnames(wb))) )
+lookUp1
+merge_singlelink$node1
+data.frame(lapply(merge_singlelink$node1, function(i) lookUp1[i]))
+apply(merge_singlelink$node1, function(i) lookUp1[i])
+merge_singlelink$node1 %in% real_names
+merge_singlelink$node1
+merge_singlelink$node1 %in% -c(1:length(colnames(wb)))
+merge_singlelink$node1 %in% lookUp1
+match(merge_singlelink$node1, lookUp1)
+lookUp1
+lookUp1 <- setNames(-c(1:length(colnames(wb))), real_names  )
+lookUp1
+match(merge_singlelink$node1, lookUp1)
+merge_singlelink$node1
+lookUp1
+real_names[match(merge_singlelink$node1, lookUp1)]
+library(qdapTools)
+install.packages("qdapTools")
+lookup <- data.frame(real_names=real_names, lie_names = -c(1:length(colnames(wb))))
+lookup
+look <- data.frame(real_names=real_names, lie_names = -c(1:length(colnames(wb))))
+library(qdapTools)
+lookup(merge_singlelink$node1, lookup[, 2:1])
+real_names[match(merge_singlelink$node1, lookUp1)]
+lookUp1
+setNames(-c(1:length(colnames(wb))), real_names  )
+lookup(merge_singlelink$node1, look[, 2:1])
+merge_singlelink$node1
+look
+look$real_names
+look$real_names[1]
+look_up <- function(merge, look) {
+salida <- matrix(NA, nrow=nrow(merge), ncol=2)
+for (i in 1:nrow(merge)) {
+if (merge[i, 1] > 0 )  {
+next
+salida[i, 1] <- merge[i, 1]
+} else {
+v <- merge[i, 1]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 1] <- new_v
+}
+}
+for (i in 1:nrow(merge)) {
+if (merge[i, 2] > 0 )  {
+next
+salida[i, 2] <- merge[i, 2]
+} else {
+v <- merge[i, 2]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 2] <- new_v
+}
+}
+}
+test <- look_up(merge = merge_singlelink, look=look)
+test
+look_up <- function(merge, look) {
+salida <- matrix(NA, nrow=nrow(merge), ncol=2)
+for (i in 1:nrow(merge)) {
+if (merge[i, 1] > 0 )  {
+next
+salida[i, 1] <- merge[i, 1]
+} else {
+v <- merge[i, 1]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 1] <- new_v
+}
+}
+for (i in 1:nrow(merge)) {
+if (merge[i, 2] > 0 )  {
+next
+salida[i, 2] <- merge[i, 2]
+} else {
+v <- merge[i, 2]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 2] <- new_v
+}
+}
+return(salida)
+}
+test <- look_up(merge = merge_singlelink, look=look)
+test
+look_up <- function(merge, look) {
+salida <- matrix(NA, nrow=nrow(merge), ncol=2)
+for (i in 1:nrow(merge)) {
+if (merge[i, 1] > 0 )  {
+salida[i, 1] <- merge[i, 1]
+} else {
+v <- merge[i, 1]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 1] <- new_v
+}
+}
+for (i in 1:nrow(merge)) {
+if (merge[i, 2] > 0 )  {
+salida[i, 2] <- merge[i, 2]
+} else {
+v <- merge[i, 2]
+id <- which(look$lie_names == v)
+new_v <- look$real_names[id]
+salida[i, 2] <- new_v
+}
+}
+return(salida)
+}
+test <- look_up(merge = merge_singlelink, look=look)
+test
+hc_sl <- to_dendo2(merge_singlelink[, c(1,2,3,6) ], enames = c(1:ncol(D)))
+plot(hc_sl, main="MST dendogram")
+hc_sl$merge
+hc_sl$labels
+length(hc_sl)
+length(hc_sl$labels)
+length(real_names)
+hc_sl$labels <- real_names
+plot(hc_sl, main="MST dendogram")
+look
+hc_sl <- to_dendo2(merge_singlelink[, c(1,2,3,6) ], enames = c(1:ncol(D)))
+hc_sl$labels <- real_names
+hc_det <- to_dendo2(merge_greedy_detm[, c(1,2,3,6) ], enames = c(1:ncol(D)))
+hc_det$labels <- real_names
+hc_mod <- to_dendo2(merge_modularity[, c(1,2,3,4) ], enames = c(1:ncol(D)))
+hc_mod$labels <- real_names
+par(mfrow=c(3,1))    # set the plotting area into a 1*2 array
+plot(hc_det, main="Greedy Algorithm 1 dendogram")
+plot(hc_sl, main="MST dendogram")
+plot(hc_mod, main="Modularity dendogram")
+q()
+# # # # # # # # # # # # # # # # # # LOADING DATA AND FUNCTIONS # # # # # # # # # # # # # # # # # # # # # # #
+# Carga de datos,
+# igual que en clusteragrr_v1.R
+rm(list = ls())
+# LOADING DATA BASE REAL DATA
+load('new_inferring_parameters_environment270219.RData')
+rm(list=setdiff(ls(), c("J", "wb" ) ))
+#load('new_inferring_parameters_environment270219.RData') # load H and J parameters ising inferred
+source("functions_hclust.R") # funciones varias
+source("hierarchical_clustering_v2_function.R")
+source("hierarchical_clustering_v5_function.R")
+source("hierarchical_clustering_greedy_function.R")
+source("hierarchical_clustering_probabilistic_greedy_function.R")
+source("create_coupling_function.R") # crea matriz J de acoples y D de distancias para simular
+source("create_mst_function.R") # crea MST a partir de una matriz de acople.
+source("acople_distance_sum_function.R") # suma las distantcias de acople dc
+source("find_ady_dc_function.R") # encuentra los nodos adyacentes en un mst dado un nodo
+source("get_num_nodes_function.R") # nos dice el numero de nodos que tiene el par de clusters a fusionar
+source("get_num_nodes_of_ady_clusters_function.R") # nos dice informacion del numero de nodos que son adyacentes a un cluster
+source("get_name_of_the_cluster_function.R") # dado el nombre de un nodo, nos dice a que cluster pertenece
+source("get_nodes_of_the_cluster_function.R") # nos da los nodos involucrados en un cluster.
+source("simulation_hc_function.R") # Genera una simulacion de hierarchical clustering con algoritmo single linkage y modificado.
+source("find_min_distcp_function.R") # funcion que encuentra min dist acople en greedy alg.
+source("pick_a_cluster_function.R")
+# funciones para recuperar distancias de acople para los clusters
+# que vienen de fast_greedy para calcular clustering con modularidad.
+source("recovering_couplingdistances_from_fastgreedyigraph_function.R")
+# Funciones para hacer post analysis con las simulaciones de HC.
+source("post_hc_analysis_function.R")
+source("find_mst_barrier_function.R")
+source("is_integer0_function.R")
+source("entropies_functions.R") # nos interesa aqui get_energy function
+source("multiplot_function.R")
+source("entropies_functions.R")
+source("network_functions_v1.R")
+library(igraph)
+library(Matrix)
+library(ggplot2)
+# Conforming the DISTANCES Network
+real_names <- colnames(wb)
+D <- sqrt(3 - as.matrix(J)) # distance
+# Por ahora, tenemos que enumerar los productos en forma consecutiva
+# despues, para el dendograma, le ponemos los nombres reales
+colnames(D) <- rownames(D) <- -c(1:length(colnames(wb)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+colnames(J) <- rownames(J) <- -c(1:length(colnames(wb)) ) # enumeramos todos las hojas o spines originales con valones negativos.
+diag(D) <- rep(Inf, length(colnames(J)))
+# # # # # # # # # # # # # # # # # # LOADING DATA AND FUNCTIONS # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # SIMULACION # # # # # # # # # # # # # # # # # # # # # # # # #
+# jan 10 , 2020
+# tomando como ejemplo L203 de simulation_hc_V7.R
+# SINGLE LINKAGE
+mst_g <- create_mst(J=J, D=D)
+invisible(capture.output( merge_singlelink <- hierarchical_clustering_v2(D=D, J=J, mst_g=mst_g) ) )
+# GREEDY DETERMINISTIC
+thres <- c(1, 0.5, 0) # 1 greedy deterministico, 0 = greedy random
+invisible(capture.output( merge_greedy_detm <- hierarchical_clustering_probabilistic_greedy(D = D, J = J, trh= thres[1] ) ) )
+# MODULARITY
+N <- length(colnames(J))
+g <- graph_from_adjacency_matrix(D, weighted=TRUE, mode="undirected", diag=FALSE)
+fc <- cluster_fast_greedy(g)
+# is_hierarchical(fc) # TRUE
+# plot_dendrogram(fc)
+result <- get_each_node_of_each_cluster(merge = fc$merges)
+nodes_of_clusters <- result$nodes_of_clusters
+merge <- result$merge
+merge_modularity <- report_merge_from_modularity(merge = result$merge, node_of_clusters = node_of_clusters)
+merge_modularity$cluster <- seq(from=1, to=N-1)
+merge_singlelink
+hc_sl <- to_dendo2(merge_singlelink[, c(1,2,3,6) ], enames = c(1:ncol(D)))
+plot(hc_sl)
+merge_greedy_detm
+hc_det <- to_dendo2(merge_greedy_detm[, c(1,2,3,6) ], enames = c(1:ncol(D)))
+plot(hc_det)
+J
+View(acople_distance_sum)
+y = c("-8" "-6" "-13", "-5")
+y = c("-8", "-6" "-13", "-5")
+y = c("-8", "-6", "-13", "-5")
+acople_distance_sum(J, y)
+acople_distance_sum <- function(J, y) {
+sumdist <- 0
+combinaciones <- combn(y,2)
+lk <- ncol(combinaciones)
+for (i in 1:lk) {
+idx <- combinaciones[, i]
+cupl <- J[idx[1], idx[2]]
+dcupl <- sqrt(3 - cupl)
+sumdist <- sumdist + dcupl
+}
+return(sumdist)
+}
+acople_energy_sum <- function(J, y) {
+sumdist <- 0
+combinaciones <- combn(y,2)
+lk <- ncol(combinaciones)
+for (i in 1:lk) {
+idx <- combinaciones[, i]
+cupl <- J[idx[1], idx[2]]
+#dcupl <- sqrt(3 - cupl)
+sumdist <- sumdist + cupl
+}
+return(sumdist)
+}
+acople_energy_sum(J, y)
+y = c("-6", "-13", "-5")
+acople_energy_sum(J, y)
+acople_distance_sum(J, y)
+q()
+q()
